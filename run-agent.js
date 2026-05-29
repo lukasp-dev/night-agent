@@ -138,6 +138,33 @@ function loadInstructions(instructionsPath, repoPath) {
   return fs.readFileSync(resolvedPath, "utf-8");
 }
 
+function formatRuntimeContext(runtimeContext) {
+  if (runtimeContext === null || runtimeContext === undefined) return "";
+  if (typeof runtimeContext === "string") {
+    return runtimeContext.trim();
+  }
+  if (typeof runtimeContext === "object") {
+    return JSON.stringify(runtimeContext, null, 2);
+  }
+  return String(runtimeContext).trim();
+}
+
+function runPreflightCommand(command, workDir, repoPath, repoName, instructionsPath) {
+  const output = execSync(command, {
+    cwd: workDir,
+    encoding: "utf-8",
+    stdio: ["pipe", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      AGENT_CONFIG_DIR: workDir,
+      AGENT_REPO_PATH: repoPath,
+      AGENT_REPO_NAME: repoName,
+      AGENT_INSTRUCTIONS_PATH: instructionsPath || ""
+    }
+  });
+  return (output || "").trim();
+}
+
 function parseTaskContent(content) {
   const lines = content.split(/\r?\n/);
   let role = "";
@@ -376,12 +403,12 @@ function buildRepoSummary(files, truncated) {
   ].join("\n");
 }
 
-async function selectFilesForTask(task, instructions, repoSummary, allowedPaths, maxFiles) {
+async function selectFilesForTask(task, guidance, repoSummary, allowedPaths, maxFiles) {
   const basePrompt = `
 Task:
 ${task}
 
-${instructions ? `Harness instructions:\n${instructions}\n` : ""}
+${guidance ? `Harness guidance:\n${guidance}\n` : ""}
 
 Repository summary:
 ${repoSummary}
@@ -651,6 +678,15 @@ async function run() {
     typeof repoConfig.instructionsPath === "string" && repoConfig.instructionsPath.trim()
       ? repoConfig.instructionsPath
       : "";
+  const preflightCommand =
+    (process.env.AGENT_PREFLIGHT_COMMAND && process.env.AGENT_PREFLIGHT_COMMAND.trim()) ||
+    (typeof repoConfig.preflightCommand === "string" && repoConfig.preflightCommand.trim()
+      ? repoConfig.preflightCommand
+      : "");
+  const preflightRequired =
+    typeof process.env.AGENT_PREFLIGHT_REQUIRED === "string"
+      ? process.env.AGENT_PREFLIGHT_REQUIRED === "true"
+      : repoConfig.preflightRequired === true;
 
   if (javaHome) {
     process.env.JAVA_HOME = javaHome;
@@ -715,6 +751,36 @@ async function run() {
       log(`Instructions load failed: ${err.message}`);
     }
   }
+  let preflightNotes = "";
+  if (preflightCommand) {
+    log(`Running preflight command: ${preflightCommand}`);
+    try {
+      preflightNotes = runPreflightCommand(
+        preflightCommand,
+        path.dirname(resolvedAgentConfigPath),
+        repoPath,
+        repoName,
+        instructionsPath
+      );
+      if (preflightNotes) {
+        log(`Preflight notes loaded: ${preflightNotes.length} chars`);
+      } else {
+        log("Preflight command returned no output.");
+      }
+    } catch (err) {
+      if (preflightRequired) {
+        throw new Error(`Preflight command failed: ${err.message}`);
+      }
+      log(`Preflight command failed: ${err.message}`);
+    }
+  }
+  const runtimeContext = formatRuntimeContext(repoConfig.runtimeContext);
+  if (runtimeContext) {
+    log(`Runtime context loaded: ${runtimeContext.length} chars`);
+  }
+  const guidance = [instructions, runtimeContext, preflightNotes]
+    .filter((entry) => typeof entry === "string" && entry.trim())
+    .join("\n\n");
 
   const resolvedTasksPath = resolvePath(process.cwd(), tasksPath);
   const taskInfo = readTaskFile(resolvedTasksPath);
@@ -741,6 +807,8 @@ async function run() {
   log(`Git commit: ${gitConfig.commit ? "yes" : "no"}`);
   log(`Test command: ${testCommand || "(none)"}`);
   log(`Run tests: ${runTests ? "yes" : "no"}`);
+  log(`Preflight command: ${preflightCommand || "(none)"}`);
+  log(`Preflight required: ${preflightRequired ? "yes" : "no"}`);
   log(`Max tokens: ${maxTokens}`);
   log("");
 
@@ -769,7 +837,7 @@ async function run() {
       const repoSummary = buildRepoSummary(repoListing.files, repoListing.truncated);
       const selected = await selectFilesForTask(
         task,
-        instructions,
+        guidance,
         repoSummary,
         allowedPaths,
         maxFilesToEdit
@@ -801,7 +869,7 @@ async function run() {
 Task:
 ${task}
 
-${instructions ? `Harness instructions:\n${instructions}\n` : ""}
+${guidance ? `Harness guidance:\n${guidance}\n` : ""}
 
 Selected files:
 ${uniqueFiles.map((file) => `- ${file}`).join("\n")}

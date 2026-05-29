@@ -184,7 +184,7 @@ Return ONLY valid JSON with this schema:
   "tasks": {
     "swe1": { "repo": "backend", "targetFile": "optional", "task": "..." },
     "swe2": { "repo": "frontend", "targetFile": "optional", "task": "..." },
-    "swe3": { "repo": "backend", "targetFile": "optional", "task": "..." }
+    "swe3": { "repo": "backend|frontend", "targetFile": "optional", "task": "..." }
   }
 }
 
@@ -192,6 +192,9 @@ Rules:
 - Use only repos listed above.
 - Keep each task scoped to a single targetFile.
 - Task text must describe a concrete user-visible or test-visible issue and expected outcome.
+- swe1 should focus on backend implementation work.
+- swe2 should focus on frontend implementation work.
+- swe3 is the testing/validation role: prioritize adding/updating tests and verification for swe1/swe2 changes, or testing-focused hardening when no direct test gap exists.
 - Avoid generic cleanup/refactor-only tasks without acceptance behavior.
 - Return JSON only (no markdown).
 `;

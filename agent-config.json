@@ -24,7 +24,34 @@
       "applyMode": "working",
       "testCommand": ".\\gradlew.bat test",
       "runTests": true,
-      "instructionsPath": "README.md",
+      "instructionsPath": "AGENT_BACKEND_CONTEXT.md",
+      "preflightCommand": "bash \"scripts/backend-preflight.sh\"",
+      "preflightRequired": true,
+      "runtimeContext": {
+        "database": {
+          "engine": "MariaDB (MySQL-compatible)",
+          "configFiles": [
+            "src\\main\\resources\\application.yml",
+            "src\\main\\resources\\application-local.yml",
+            "docker-compose.yml"
+          ],
+          "profiles": {
+            "local": "jdbc:mariadb://localhost:3306/shop",
+            "default": "Managed MariaDB connection is defined in application.yml"
+          },
+          "connectionVariables": [
+            "spring.datasource.url",
+            "spring.datasource.username",
+            "spring.datasource.password",
+            "spring.datasource.driver-class-name"
+          ],
+          "notes": "Treat DB credentials as secrets. Do not hardcode new credentials in code."
+        },
+        "apiConnection": {
+          "frontendConsumerRepo": "gallerysoma-frontend",
+          "contract": "Frontend calls GallerySoma-API REST endpoints; keep request/response contracts backward-compatible unless task says otherwise."
+        }
+      },
       "javaHome": "C:\\Program Files\\Microsoft\\jdk-21.0.11.10-hotspot",
       "git": {
         "createBranch": true,
