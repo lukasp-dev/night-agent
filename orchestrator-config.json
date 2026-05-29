@@ -1,0 +1,17 @@
+{
+  "agentConfigPath": "agent-config.json",
+  "tasksPath": "orchestrator-tasks.json",
+  "planPath": "orchestrator-plan.json",
+  "workDir": ".orchestrator",
+  "statePath": ".orchestrator\\run-state.json",
+  "resume": true,
+  "finalChecks": {
+    "backend": ".\\gradlew.bat test",
+    "frontend": "npm run lint"
+  },
+  "roleRepoMap": {
+    "swe1": "backend",
+    "swe2": "frontend",
+    "swe3": "backend"
+  }
+}

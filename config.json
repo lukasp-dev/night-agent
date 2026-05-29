@@ -1,0 +1,30 @@
+{
+  "endpoint": "https://openai-playground-openai.openai.azure.com/openai/v1/chat/completions",
+  "model": "gpt-4o",
+  "repoPath": "C:\\Users\\t-jewookpark\\ai-agents\\night-agent",
+  "agentConfigPath": "agent-config.json",
+  "tasksPath": "tasks.txt",
+  "orchestratorConfigPath": "orchestrator-config.json",
+  "fileDiscovery": "auto",
+  "maxFilesToEdit": 5,
+  "maxPatchChanges": 20,
+  "maxPatchChars": 20000,
+  "repoMapMaxFiles": 2000,
+  "repoMapCachePath": ".agent-cache\\repo-map.json",
+  "repoMapCacheTtlMinutes": 120,
+  "maxFileBytes": 40000,
+  "retryAttempts": 2,
+  "applyMode": "candidate",
+  "candidateDir": ".agent-candidates",
+  "git": {
+    "createBranch": false,
+    "commit": false,
+    "branchPrefix": "night-agent",
+    "commitMessage": "agent({role}): {task}"
+  },
+  "targetFile": "run-agent.js",
+  "candidateFile": "run-agent.next.js",
+  "patchFile": "run-agent.patch.json",
+  "maxIterations": 1,
+  "maxTokens": 4096
+}

@@ -1,0 +1,19 @@
+Tonight task:
+
+Update only the logging behavior in run-agent.js.
+
+Requirements:
+- Add log levels like INFO / ERROR
+- Keep the rest of the file unchanged
+- Return ONLY JSON
+- Use the schema:
+{
+  "changes": [
+    {
+      "type": "replace",
+      "file": "path\\to\\file.js",
+      "find": "...exact existing code...",
+      "replace": "...new code..."
+    }
+  ]
+}

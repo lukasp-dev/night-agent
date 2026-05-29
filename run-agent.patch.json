@@ -1,0 +1,85 @@
+{
+  "targetFile": "run-agent.js",
+  "changes": [
+    {
+      "type": "replace",
+      "find": "function log(msg) {\n  const line = `[${timestamp()}] ${msg}`;\n  console.log(line);\n  fs.appendFileSync(\"logs.txt\", line + \"\\n\");\n}",
+      "replace": "function log(level, msg) {\n  const line = `[${timestamp()}] [${level}] ${msg}`;\n  console.log(line);\n  fs.appendFileSync(\"logs.txt\", line + \"\\n\");\n}"
+    },
+    {
+      "type": "replace",
+      "find": "log(\"=== Night Agent Start ===\");",
+      "replace": "log(\"INFO\", \"=== Night Agent Start ===\");"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Model: ${config.model}`);",
+      "replace": "log(\"INFO\", `Model: ${config.model}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Repo path: ${config.repoPath}`);",
+      "replace": "log(\"INFO\", `Repo path: ${config.repoPath}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Target file: ${config.targetFile}`);",
+      "replace": "log(\"INFO\", `Target file: ${config.targetFile}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Candidate file: ${config.candidateFile}`);",
+      "replace": "log(\"INFO\", `Candidate file: ${config.candidateFile}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Patch file: ${patchFile}`);",
+      "replace": "log(\"INFO\", `Patch file: ${patchFile}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Max tokens: ${maxTokens}`);",
+      "replace": "log(\"INFO\", `Max tokens: ${maxTokens}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`--- Iteration ${i + 1} ---`);",
+      "replace": "log(\"INFO\", `--- Iteration ${i + 1} ---`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Finish reason: ${finishReason}`);",
+      "replace": "log(\"INFO\", `Finish reason: ${finishReason}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`✅ Candidate file written: ${config.candidateFile}`);",
+      "replace": "log(\"INFO\", `✅ Candidate file written: ${config.candidateFile}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`✅ Patch file written: ${patchFile}`);",
+      "replace": "log(\"INFO\", `✅ Patch file written: ${patchFile}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(\"✅ Syntax check passed\");",
+      "replace": "log(\"INFO\", \"✅ Syntax check passed\");"
+    },
+    {
+      "type": "replace",
+      "find": "log(\"=== Night Agent End ===\");",
+      "replace": "log(\"INFO\", \"=== Night Agent End ===\");"
+    },
+    {
+      "type": "replace",
+      "find": "log(`Fatal error: ${err.message}`);",
+      "replace": "log(\"ERROR\", `Fatal error: ${err.message}`);"
+    },
+    {
+      "type": "replace",
+      "find": "log(`❌ Error: ${err.message}`);",
+      "replace": "log(\"ERROR\", `❌ Error: ${err.message}`);"
+    }
+  ]
+}

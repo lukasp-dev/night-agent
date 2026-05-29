@@ -1,0 +1,57 @@
+{
+  "activeRepo": "backend",
+  "repos": {
+    "night-agent": {
+      "path": "C:\\Users\\t-jewookpark\\ai-agents\\night-agent",
+      "targetFile": "run-agent.js",
+      "candidateFile": "run-agent.next.js",
+      "patchFile": "run-agent.patch.json",
+      "allowedPaths": [
+        "src"
+      ],
+      "testCommand": "npm run lint",
+      "runTests": false
+    },
+    "backend": {
+      "path": "C:\\Users\\t-jewookpark\\gallery-soma\\GallerySoma-API",
+      "targetFile": "",
+      "candidateFile": "run-agent.next",
+      "patchFile": "run-agent.patch.json",
+      "allowedPaths": [
+        "src"
+      ],
+      "fileDiscovery": "auto",
+      "applyMode": "working",
+      "testCommand": ".\\gradlew.bat test",
+      "runTests": true,
+      "instructionsPath": "README.md",
+      "javaHome": "C:\\Program Files\\Microsoft\\jdk-21.0.11.10-hotspot",
+      "git": {
+        "createBranch": true,
+        "commit": true,
+        "branchPrefix": "night-agent",
+        "commitMessage": "agent({role}): {task}"
+      }
+    },
+    "frontend": {
+      "path": "C:\\Users\\t-jewookpark\\gallery-soma\\gallerysoma-frontend",
+      "targetFile": "",
+      "candidateFile": "run-agent.next",
+      "patchFile": "run-agent.patch.json",
+      "allowedPaths": [
+        "src"
+      ],
+      "fileDiscovery": "auto",
+      "applyMode": "working",
+      "testCommand": "npm run lint",
+      "runTests": true,
+      "instructionsPath": "README.md",
+      "git": {
+        "createBranch": true,
+        "commit": true,
+        "branchPrefix": "night-agent",
+        "commitMessage": "agent({role}): {task}"
+      }
+    }
+  }
+}
