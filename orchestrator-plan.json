@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "swe1": {
+      "repo": "backend",
+      "targetFile": "src/controllers/ImageController.js",
+      "task": "Fix the issue where uploading an image with a large file size causes a server timeout. Implement a file size validation check and return a user-friendly error message if the file exceeds the allowed size. Expected outcome: Uploading an oversized file should return a 400 error with a clear message, and the server should not timeout."
+    },
+    "swe2": {
+      "repo": "frontend",
+      "targetFile": "src/components/ImageUploadForm.js",
+      "task": "Resolve the bug where the progress bar does not update correctly during image uploads. Ensure the progress bar reflects the actual upload progress in real-time. Expected outcome: Users should see an accurate progress bar that updates dynamically during the upload process."
+    },
+    "swe3": {
+      "repo": "backend",
+      "targetFile": "src/tests/ImageController.test.js",
+      "task": "Add test cases to validate the new file size validation logic in ImageController.js. Include tests for valid file sizes, oversized files, and edge cases. Expected outcome: All new test cases should pass, and the coverage for ImageController.js should increase by at least 10%."
+    }
+  }
+}

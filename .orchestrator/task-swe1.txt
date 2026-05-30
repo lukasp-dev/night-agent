@@ -1,0 +1,3 @@
+Role: swe1
+
+Fix the issue where uploading an image with a large file size causes a server timeout. Implement a file size validation check and return a user-friendly error message if the file exceeds the allowed size. Expected outcome: Uploading an oversized file should return a 400 error with a clear message, and the server should not timeout.

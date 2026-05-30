@@ -1,0 +1,3 @@
+Role: swe2
+
+Resolve the bug where the progress bar does not update correctly during image uploads. Ensure the progress bar reflects the actual upload progress in real-time. Expected outcome: Users should see an accurate progress bar that updates dynamically during the upload process.

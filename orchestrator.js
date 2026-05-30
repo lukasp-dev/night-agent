@@ -162,6 +162,13 @@ function runFinalCheck(repoName, repoPath, checkCommand) {
   });
 }
 
+function shouldRunTestsFromEnv() {
+  if (typeof process.env.AGENT_RUN_TESTS === "string") {
+    return process.env.AGENT_RUN_TESTS === "true";
+  }
+  return true;
+}
+
 async function buildPlan(ceoTask, agentConfig, roleRepoMap) {
   const repoList = Object.entries(agentConfig.repos).map(([name, cfg]) => ({
     name,
@@ -303,6 +310,7 @@ async function main() {
     if (!agentConfig.repos[repoName]) {
       throw new Error(`Unknown repo "${repoName}" for ${role}`);
     }
+    const repoPath = resolvePath(path.dirname(agentConfigPath), agentConfig.repos[repoName].path);
 
     const taskText =
       typeof taskEntry === "string" ? taskEntry : taskEntry.task || "";
@@ -326,7 +334,13 @@ async function main() {
     try {
       runAgent(role, repoName, targetFile, {
         AGENT_CONFIG_PATH: agentConfigPath,
-        AGENT_TASKS_PATH: taskFile
+        AGENT_TASKS_PATH: taskFile,
+        AGENT_REPO_PATH: repoPath,
+        AGENT_REPO_NAME: repoName,
+        AGENT_RUN_TESTS:
+          typeof process.env.AGENT_RUN_TESTS === "string"
+            ? process.env.AGENT_RUN_TESTS
+            : ""
       });
       state.roles[role] = {
         ...state.roles[role],
@@ -355,8 +369,13 @@ async function main() {
     orchConfig.finalChecks && typeof orchConfig.finalChecks === "object"
       ? orchConfig.finalChecks
       : {};
+  const runFinalChecks = shouldRunTestsFromEnv();
 
   for (const repoName of touchedRepos) {
+    if (!runFinalChecks) {
+      log(`Skipping final check (${repoName}): AGENT_RUN_TESTS=false`);
+      continue;
+    }
     const repoConfig = agentConfig.repos[repoName];
     if (!repoConfig) {
       throw new Error(`Final check repo config not found: ${repoName}`);

@@ -33,6 +33,8 @@ It supports two modes:
 | `orchestrator-tasks.json` | Either fixed tasks or a `ceoTask` prompt for plan generation |
 | `tasks.txt` | Default single-agent task input |
 | `logs.txt` | Execution logs written by `run-agent.js` |
+| `ui/` | React + Vite multi-repo dashboard with Start Building controls and live logs |
+| `ui/server.mjs` | Local API runner that creates branches, retries tests, commits, and pushes |
 | `scripts/` | Utility scripts (for example backend preflight) |
 | `skills/` and `.copilot/skills/` | Skill docs and behavior definitions (smart-commit, type correction, etc.) |
 | `run-agent.next.js` / `run-agent.patch.json` | Candidate output artifacts produced by runs |
@@ -94,6 +96,64 @@ Orchestrator artifacts:
 - `orchestrator-plan.json` (generated plan when using `ceoTask`)
 - `.orchestrator/run-state.json` (resumable state)
 - `.orchestrator/task-<role>.txt` (role task files)
+
+---
+
+## Quick start (UI harness form)
+
+Use the React UI + API runner when you want real multi-repo execution with branch creation, retries, and push automation.
+
+```bash
+cd ui
+npm install
+npm run start
+```
+
+Open the local URL shown by Vite (typically `http://localhost:5173`).
+
+The UI posts to `http://localhost:8787/api/runs` and streams status/logs by polling run state.
+
+To build/preview the UI:
+
+```bash
+cd ui
+npm run build
+npm run preview
+```
+
+### UI form fields
+
+- `Mission`: high-level objective for the run
+- `Branch prefix`: prefix used when creating per-repo branches
+- `Max retries per repo`: retry limit for failing test commands
+- `Swe3 validation repo name`: repo that should receive stricter retry focus
+- `Commit message template`: base commit text for auto-commit per repo
+- `Remediation command`: command executed from `night-agent` root to apply fixes between retries (for example `node orchestrator.js`)
+- `Run remediation command before test loop`: applies remediation once before testing starts
+- `Re-run remediation command whenever tests fail`: applies remediation between failed test attempts
+- `Push branch when tests pass`: performs `git push -u origin <branch>`
+- `Repositories` list:
+  - `Enabled`
+  - `Name`
+  - `Path`
+  - `Test command`
+  - add/remove repo rows
+
+### Start/Stop Building and logs behavior
+
+When you click **Start Building**, the backend run does this:
+
+1. (Optional) run remediation command first (for orchestration-driven edits)
+2. For each enabled repo:
+   - verify git repo
+   - create a new branch (`<prefix>/<repo>-<timestamp>`)
+   - run test command with retry loop
+   - if enabled, run remediation command between retries
+   - commit changed files with the configured template
+   - push branch to origin (if push is enabled)
+3. Stream logs and per-repo result status to the UI until complete/failed/cancelled
+
+When you click **Stop Run** during execution, the harness sends a cancellation request, terminates active commands, and marks the run as `cancelled`.
 
 ---
 
@@ -199,4 +259,3 @@ If a run stops mid-way, rerunning `node orchestrator.js` resumes from state when
 - This repo is designed to operate primarily as a local harness.
 - Keep credentials out of committed config files.
 - Prefer `candidate` mode when testing new prompts/flows.
-

@@ -150,17 +150,41 @@ function formatRuntimeContext(runtimeContext) {
 }
 
 function runPreflightCommand(command, workDir, repoPath, repoName, instructionsPath) {
-  const output = execSync(command, {
+  const quoteForBash = (value) => `'${String(value || "").replace(/'/g, `'\"'\"'`)}'`;
+  const trimmed = String(command || "").trim();
+  let effectiveCommand = trimmed;
+
+  if (process.platform === "win32" && /^bash\s+/i.test(trimmed)) {
+    const rawTarget = trimmed.replace(/^bash\s+/i, "").trim();
+    const target =
+      (rawTarget.startsWith('"') && rawTarget.endsWith('"')) ||
+      (rawTarget.startsWith("'") && rawTarget.endsWith("'"))
+        ? rawTarget.slice(1, -1)
+        : rawTarget;
+    const inline = [
+      `AGENT_CONFIG_DIR=${quoteForBash(workDir)}`,
+      `AGENT_REPO_PATH=${quoteForBash(repoPath)}`,
+      `AGENT_REPO_NAME=${quoteForBash(repoName)}`,
+      `AGENT_INSTRUCTIONS_PATH=${quoteForBash(instructionsPath || "")}`,
+      quoteForBash(target)
+    ].join(" ");
+    effectiveCommand = `bash -lc "${inline}"`;
+  }
+
+  const preflightEnv = {
+    ...process.env,
+    AGENT_CONFIG_DIR: workDir,
+    AGENT_REPO_NAME: repoName,
+    AGENT_INSTRUCTIONS_PATH: instructionsPath || ""
+  };
+  if (repoPath && String(repoPath).trim()) {
+    preflightEnv.AGENT_REPO_PATH = String(repoPath).trim();
+  }
+  const output = execSync(effectiveCommand, {
     cwd: workDir,
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
-    env: {
-      ...process.env,
-      AGENT_CONFIG_DIR: workDir,
-      AGENT_REPO_PATH: repoPath,
-      AGENT_REPO_NAME: repoName,
-      AGENT_INSTRUCTIONS_PATH: instructionsPath || ""
-    }
+    env: preflightEnv
   });
   return (output || "").trim();
 }
@@ -231,7 +255,14 @@ function extractJsonOnly(text) {
     return fenced[1].trim();
   }
 
-  return text.trim();
+  const trimmed = text.trim();
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+
+  return trimmed;
 }
 
 function detectNewlineStyle(text) {
@@ -459,6 +490,52 @@ Rules:
   return normalized.slice(0, maxFiles);
 }
 
+function inferFilesFromTask(task, allowedPaths, maxFiles) {
+  if (!task || typeof task !== "string") return [];
+  const matches = task.match(/[A-Za-z0-9_./\\-]+\.[A-Za-z0-9]+/g) || [];
+  const unique = Array.from(
+    new Set(matches.map((entry) => normalizeRepoPath(entry)))
+  );
+  return unique
+    .filter((file) => isPathAllowed(file, allowedPaths))
+    .slice(0, maxFiles);
+}
+
+function remapMissingSelections(repoPath, selectedFiles, allowedPaths, maxFiles) {
+  const listing = listRepoFiles(repoPath, allowedPaths, Math.max(200, maxFiles * 20));
+  const available = listing.files;
+  const lowerMap = new Map(
+    available.map((file) => [normalizeRepoPath(file).toLowerCase(), normalizeRepoPath(file)])
+  );
+  const byName = new Map();
+  for (const file of available) {
+    const key = path.basename(file).toLowerCase();
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(normalizeRepoPath(file));
+  }
+
+  const resolved = [];
+  for (const file of selectedFiles) {
+    const normalized = normalizeRepoPath(file);
+    const abs = resolvePath(repoPath, normalized);
+    if (fs.existsSync(abs)) {
+      resolved.push(normalized);
+      continue;
+    }
+    const lowerHit = lowerMap.get(normalized.toLowerCase());
+    if (lowerHit) {
+      resolved.push(lowerHit);
+      continue;
+    }
+    const matches = byName.get(path.basename(normalized).toLowerCase()) || [];
+    if (matches.length === 1) {
+      resolved.push(matches[0]);
+    }
+  }
+
+  return Array.from(new Set(resolved)).slice(0, maxFiles);
+}
+
 function readFileWithLimit(repoPath, filePath, byteLimit) {
   const absolutePath = resolvePath(repoPath, filePath);
   const stat = fs.statSync(absolutePath);
@@ -585,6 +662,29 @@ function applyPatchToContent(original, patch) {
 
   const newline = detectNewlineStyle(original);
   let updated = normalizeNewlines(original);
+  const normalizeLineForMatch = (line) => line.replace(/[ \t]+$/g, "");
+
+  function findLineAlignedRange(haystackText, needleText) {
+    const haystackLines = haystackText.split("\n");
+    const needleLines = needleText.split("\n");
+    if (!needleLines.length || !haystackLines.length || needleLines.length > haystackLines.length) {
+      return null;
+    }
+    const normalizedNeedle = needleLines.map(normalizeLineForMatch);
+    for (let i = 0; i <= haystackLines.length - needleLines.length; i += 1) {
+      let matched = true;
+      for (let j = 0; j < needleLines.length; j += 1) {
+        if (normalizeLineForMatch(haystackLines[i + j]) !== normalizedNeedle[j]) {
+          matched = false;
+          break;
+        }
+      }
+      if (matched) {
+        return { startLine: i, endLine: i + needleLines.length };
+      }
+    }
+    return null;
+  }
 
   for (const change of patch.changes) {
     if (change.type !== "replace") {
@@ -598,16 +698,28 @@ function applyPatchToContent(original, patch) {
     const find = normalizeNewlines(change.find);
     const replace = normalizeNewlines(change.replace);
     const index = updated.indexOf(find);
-    if (index === -1) {
+    if (index !== -1) {
+      updated =
+        updated.slice(0, index) +
+        replace +
+        updated.slice(index + find.length);
+      continue;
+    }
+
+    const alignedRange = findLineAlignedRange(updated, find);
+    if (!alignedRange) {
       throw new Error(
         "Patch apply failed: target snippet not found (check line endings)"
       );
     }
-
-    updated =
-      updated.slice(0, index) +
-      replace +
-      updated.slice(index + find.length);
+    const updatedLines = updated.split("\n");
+    const replaceLines = replace.split("\n");
+    const mergedLines = [
+      ...updatedLines.slice(0, alignedRange.startLine),
+      ...replaceLines,
+      ...updatedLines.slice(alignedRange.endLine)
+    ];
+    updated = mergedLines.join("\n");
   }
 
   return newline === "\r\n" ? updated.replace(/\n/g, "\r\n") : updated;
@@ -818,6 +930,7 @@ async function run() {
     const shouldAutoSelect =
       !targetFile || fileDiscovery.toLowerCase() === "auto" || targetFile === "auto";
     let selectedFiles = [];
+    let autoListedFiles = [];
 
     if (shouldAutoSelect) {
       const cacheMeta = {
@@ -828,6 +941,7 @@ async function run() {
       const cachePath = resolvePath(repoPath, repoMapCachePath);
       const cached = readRepoMapCache(cachePath, repoMapCacheTtlMinutes, cacheMeta);
       const repoListing = cached || listRepoFiles(repoPath, allowedPaths, repoMapMaxFiles);
+      autoListedFiles = Array.isArray(repoListing.files) ? repoListing.files : [];
       if (!cached) {
         writeRepoMapCache(cachePath, cacheMeta, repoListing.files, repoListing.truncated);
         log(`Repo map cache written: ${cachePath}`);
@@ -835,19 +949,44 @@ async function run() {
         log(`Repo map cache hit: ${cachePath}`);
       }
       const repoSummary = buildRepoSummary(repoListing.files, repoListing.truncated);
-      const selected = await selectFilesForTask(
-        task,
-        guidance,
-        repoSummary,
-        allowedPaths,
-        maxFilesToEdit
-      );
-      selectedFiles = selected.filter((file) => isPathAllowed(file, allowedPaths));
+      try {
+        const selected = await selectFilesForTask(
+          task,
+          guidance,
+          repoSummary,
+          allowedPaths,
+          maxFilesToEdit
+        );
+        selectedFiles = selected.filter((file) => isPathAllowed(file, allowedPaths));
+      } catch (err) {
+        log(`⚠️ File selection fallback triggered: ${err.message}`);
+        const fallback = [];
+        if (targetFile && targetFile !== "auto") {
+          fallback.push(normalizeRepoPath(targetFile));
+        }
+        fallback.push(...inferFilesFromTask(task, allowedPaths, maxFilesToEdit));
+        if (fallback.length === 0 && repoListing.files.length) {
+          fallback.push(...repoListing.files.slice(0, maxFilesToEdit));
+        }
+        selectedFiles = Array.from(new Set(fallback)).filter((file) =>
+          isPathAllowed(file, allowedPaths)
+        );
+      }
     } else {
       selectedFiles = [normalizeRepoPath(targetFile)];
     }
 
-    const uniqueFiles = Array.from(new Set(selectedFiles));
+    let uniqueFiles = Array.from(new Set(selectedFiles));
+    uniqueFiles = remapMissingSelections(repoPath, uniqueFiles, allowedPaths, maxFilesToEdit);
+    if (uniqueFiles.length === 0 && shouldAutoSelect && autoListedFiles.length > 0) {
+      log("⚠️ Selection empty after remap. Falling back to first indexed files.");
+      uniqueFiles = remapMissingSelections(
+        repoPath,
+        autoListedFiles.slice(0, maxFilesToEdit),
+        allowedPaths,
+        maxFilesToEdit
+      );
+    }
     if (uniqueFiles.length === 0) {
       throw new Error("No files selected for editing.");
     }
@@ -1005,6 +1144,11 @@ ${allowedPaths.length ? `- Allowed paths: ${allowedPaths.join(", ")}` : ""}
         updatedFiles = applyPatchToFiles(fileContents, patch);
         changedFiles = Object.keys(updatedFiles);
         log(`Files changed: ${changedFiles.join(", ")}`);
+        if (changedFiles.length === 0) {
+          log("⚠️ Patch produced no effective changes. Skipping commit for this role.");
+          log("");
+          break;
+        }
 
         if (
           applyMode.toLowerCase() !== "candidate" &&
