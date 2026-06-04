@@ -1,7 +1,7 @@
 {
-  "createdAt": "2026-05-30T17:48:50.476Z",
-  "updatedAt": "2026-05-30T17:49:17.003Z",
-  "taskHash": "e4f7db20163deac0c56e002c373f037bf3742aa04b74a79f911e2ec8788dc098",
+  "createdAt": "2026-06-04T18:30:48.003Z",
+  "updatedAt": "2026-06-04T18:31:30.165Z",
+  "taskHash": "5cc96d957986ed67d005d1532d8be7a7eada4a0a31d439cfbb04948c0c9fce44",
   "roleRepoMap": {
     "swe1": "backend",
     "swe2": "frontend",
@@ -12,26 +12,26 @@
     "swe1": {
       "status": "done",
       "repo": "backend",
-      "targetFile": "src/controllers/ImageController.js",
+      "targetFile": "src/userController.js",
       "taskFile": "C:\\Users\\t-jewookpark\\ai-agents\\night-agent\\.orchestrator\\task-swe1.txt",
-      "startedAt": "2026-05-30T17:48:50.478Z",
-      "finishedAt": "2026-05-30T17:49:00.668Z"
+      "startedAt": "2026-06-04T18:30:48.007Z",
+      "finishedAt": "2026-06-04T18:31:02.808Z"
     },
     "swe2": {
       "status": "done",
       "repo": "frontend",
-      "targetFile": "src/components/ImageUploadForm.js",
+      "targetFile": "src/components/UserForm.js",
       "taskFile": "C:\\Users\\t-jewookpark\\ai-agents\\night-agent\\.orchestrator\\task-swe2.txt",
-      "startedAt": "2026-05-30T17:49:00.670Z",
-      "finishedAt": "2026-05-30T17:49:07.405Z"
+      "startedAt": "2026-06-04T18:31:02.811Z",
+      "finishedAt": "2026-06-04T18:31:11.814Z"
     },
     "swe3": {
       "status": "done",
       "repo": "backend",
-      "targetFile": "src/tests/ImageController.test.js",
+      "targetFile": "src/tests/userController.test.js",
       "taskFile": "C:\\Users\\t-jewookpark\\ai-agents\\night-agent\\.orchestrator\\task-swe3.txt",
-      "startedAt": "2026-05-30T17:49:07.407Z",
-      "finishedAt": "2026-05-30T17:49:17.000Z"
+      "startedAt": "2026-06-04T18:31:11.816Z",
+      "finishedAt": "2026-06-04T18:31:30.163Z"
     }
   },
   "finalChecks": {},
@@ -40,5 +40,5 @@
     "swe2",
     "swe3"
   ],
-  "completedAt": "2026-05-30T17:49:17.003Z"
+  "completedAt": "2026-06-04T18:31:30.165Z"
 }

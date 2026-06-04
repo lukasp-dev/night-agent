@@ -34,7 +34,7 @@ It supports two modes:
 | `tasks.txt` | Default single-agent task input |
 | `logs.txt` | Execution logs written by `run-agent.js` |
 | `ui/` | React + Vite multi-repo dashboard with Start Building controls and live logs |
-| `ui/server.mjs` | Local API runner that creates branches, retries tests, commits, and pushes |
+| `ui/server.mjs` + `ui/server/*` | Durable API runner with run persistence, repo locking, retries, cancellation, and schedule endpoints |
 | `scripts/` | Utility scripts (for example backend preflight) |
 | `skills/` and `.copilot/skills/` | Skill docs and behavior definitions (smart-commit, type correction, etc.) |
 | `run-agent.next.js` / `run-agent.patch.json` | Candidate output artifacts produced by runs |
@@ -111,7 +111,7 @@ npm run start
 
 Open the local URL shown by Vite (typically `http://localhost:5173`).
 
-The UI posts to `http://localhost:8787/api/runs` and streams status/logs by polling run state.
+The UI posts to `http://localhost:8787/api/runs` and streams status/logs by polling run state. It also loads defaults from `GET /api/config` and recent runs from `GET /api/runs`.
 
 To build/preview the UI:
 
@@ -151,9 +151,17 @@ When you click **Start Building**, the backend run does this:
    - if enabled, run remediation command between retries
    - commit changed files with the configured template
    - push branch to origin (if push is enabled)
-3. Stream logs and per-repo result status to the UI until complete/failed/cancelled
+3. Persist run state to disk and stream logs/per-repo status to the UI until complete/failed/cancelled
 
 When you click **Stop Run** during execution, the harness sends a cancellation request, terminates active commands, and marks the run as `cancelled`.
+
+### Schedule API for all-day runs
+
+- `POST /api/schedules` creates a recurring mission with `intervalMinutes` and a full run payload.
+- `GET /api/schedules` lists schedules and latest run metadata.
+- `POST /api/schedules/:id/enabled` toggles a schedule on/off.
+- `DELETE /api/schedules/:id` removes a schedule.
+- If a schedule ticks while one of its repos is already active, that tick is skipped safely.
 
 ---
 
@@ -223,6 +231,7 @@ Controls:
 - `.agent-cache/`: repo-map cache
 - `.agent-candidates/`: candidate outputs when enabled
 - `.orchestrator/`: state and role task files for orchestration
+- `.night-agent-state/`: persisted UI API run records, run index, and schedule state
 
 If a run stops mid-way, rerunning `node orchestrator.js` resumes from state when `resume` is enabled.
 

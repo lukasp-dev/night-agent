@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "agent": "node run-agent.js",
+    "orchestrator": "node orchestrator.js",
+    "ui:start": "npm --prefix ui run start",
+    "ui:lint": "npm --prefix ui run lint --silent",
+    "ui:build": "npm --prefix ui run build --silent",
+    "test": "npm run ui:lint && npm run ui:build"
   },
   "keywords": [],
   "author": "",
