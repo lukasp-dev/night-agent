@@ -1,3 +1,3 @@
 Role: swe3
 
-Add test cases to validate the new file size validation logic in ImageController.js. Include tests for valid file sizes, oversized files, and edge cases. Expected outcome: All new test cases should pass, and the coverage for ImageController.js should increase by at least 10%.
+Add test cases to verify the email validation logic in the user creation endpoint. Include tests for valid and invalid email formats. Expected outcome: All tests pass, and invalid email formats are correctly rejected in the test suite.

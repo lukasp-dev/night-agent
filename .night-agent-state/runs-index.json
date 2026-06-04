@@ -1,0 +1,24 @@
+{
+  "byId": {
+    "2785ae59-3662-4742-97ec-98c6d6fc31bd": {
+      "id": "2785ae59-3662-4742-97ec-98c6d6fc31bd",
+      "status": "failed",
+      "source": "manual",
+      "scheduleId": null,
+      "startedAt": "2026-06-04T18:14:08.033Z",
+      "endedAt": "2026-06-04T18:17:59.480Z",
+      "resultsCount": 1,
+      "logsDropped": 0
+    },
+    "4db212d9-982b-44ed-8560-ae84cdf31c8e": {
+      "id": "4db212d9-982b-44ed-8560-ae84cdf31c8e",
+      "status": "failed",
+      "source": "manual",
+      "scheduleId": null,
+      "startedAt": "2026-06-04T18:25:17.794Z",
+      "endedAt": "2026-06-04T18:32:10.384Z",
+      "resultsCount": 1,
+      "logsDropped": 0
+    }
+  }
+}

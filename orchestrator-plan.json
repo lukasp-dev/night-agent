@@ -2,18 +2,18 @@
   "tasks": {
     "swe1": {
       "repo": "backend",
-      "targetFile": "src/controllers/ImageController.js",
-      "task": "Fix the issue where uploading an image with a large file size causes a server timeout. Implement a file size validation check and return a user-friendly error message if the file exceeds the allowed size. Expected outcome: Uploading an oversized file should return a 400 error with a clear message, and the server should not timeout."
+      "targetFile": "src/userController.js",
+      "task": "Fix the issue where the user creation endpoint does not validate email format correctly. Update the email validation logic to ensure proper format checking. Expected outcome: API rejects invalid email formats with a 400 status code and appropriate error message."
     },
     "swe2": {
       "repo": "frontend",
-      "targetFile": "src/components/ImageUploadForm.js",
-      "task": "Resolve the bug where the progress bar does not update correctly during image uploads. Ensure the progress bar reflects the actual upload progress in real-time. Expected outcome: Users should see an accurate progress bar that updates dynamically during the upload process."
+      "targetFile": "src/components/UserForm.js",
+      "task": "Resolve the bug where the form does not display error messages for invalid email inputs. Implement error message rendering for email validation failures. Expected outcome: Users see a clear error message below the email field when an invalid email is entered."
     },
     "swe3": {
       "repo": "backend",
-      "targetFile": "src/tests/ImageController.test.js",
-      "task": "Add test cases to validate the new file size validation logic in ImageController.js. Include tests for valid file sizes, oversized files, and edge cases. Expected outcome: All new test cases should pass, and the coverage for ImageController.js should increase by at least 10%."
+      "targetFile": "src/tests/userController.test.js",
+      "task": "Add test cases to verify the email validation logic in the user creation endpoint. Include tests for valid and invalid email formats. Expected outcome: All tests pass, and invalid email formats are correctly rejected in the test suite."
     }
   }
 }

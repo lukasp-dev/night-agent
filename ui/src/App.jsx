@@ -1,22 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
-const DEFAULT_REPOS = [
-  {
-    id: 'backend',
-    name: 'backend',
-    path: 'C:\\Users\\t-jewookpark\\gallery-soma\\GallerySoma-API',
-    testCommand: '.\\gradlew.bat test',
-    enabled: true,
-  },
-  {
-    id: 'frontend',
-    name: 'frontend',
-    path: 'C:\\Users\\t-jewookpark\\gallery-soma\\gallerysoma-frontend',
-    testCommand: 'npm run lint',
-    enabled: true,
-  },
-]
+const DEFAULT_REPOS = []
 
 const INITIAL_FORM = {
   mission: 'Run multi-repo delivery until tests pass and push successful branches.',
@@ -45,6 +30,7 @@ function App() {
   const [repos, setRepos] = useState(DEFAULT_REPOS)
   const [runId, setRunId] = useState('')
   const [runData, setRunData] = useState(null)
+  const [recentRuns, setRecentRuns] = useState([])
   const [requestError, setRequestError] = useState('')
   const [pollError, setPollError] = useState('')
 
@@ -58,6 +44,39 @@ function App() {
       (repo) => repo.name.trim() && repo.path.trim() && repo.testCommand.trim(),
     )
   }, [enabledRepos])
+
+  useEffect(() => {
+    const loadDefaults = async () => {
+      try {
+        const response = await fetch('/api/config')
+        if (!response.ok) throw new Error('Failed to load server defaults.')
+        const data = await response.json()
+        if (Array.isArray(data.defaultRepos) && data.defaultRepos.length) {
+          setRepos(data.defaultRepos)
+        }
+        if (data.defaults && typeof data.defaults === 'object') {
+          setForm((prev) => ({ ...prev, ...data.defaults }))
+        }
+      } catch {
+        // Keep local defaults when server config is unavailable.
+      }
+    }
+    loadDefaults()
+  }, [])
+
+  useEffect(() => {
+    const loadRecentRuns = async () => {
+      try {
+        const response = await fetch('/api/runs?limit=10')
+        if (!response.ok) return
+        const data = await response.json()
+        setRecentRuns(Array.isArray(data.items) ? data.items : [])
+      } catch {
+        // Ignore list fetch issues.
+      }
+    }
+    loadRecentRuns()
+  }, [runId, runData?.status])
 
   useEffect(() => {
     if (!runId) return undefined
@@ -321,6 +340,34 @@ function App() {
                   <td>{result.testsPassed ? 'Passed' : 'Pending/Failed'}</td>
                   <td>{result.committed ? 'Yes' : 'No'}</td>
                   <td>{result.pushed ? 'Yes' : 'No'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Recent Runs</h2>
+        {!recentRuns.length ? (
+          <p className="muted">No previous runs found.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Ended</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentRuns.map((entry) => (
+                <tr key={entry.id}>
+                  <td>{entry.id}</td>
+                  <td>{entry.status}</td>
+                  <td>{entry.startedAt ? new Date(entry.startedAt).toLocaleString() : '-'}</td>
+                  <td>{entry.endedAt ? new Date(entry.endedAt).toLocaleString() : '-'}</td>
                 </tr>
               ))}
             </tbody>

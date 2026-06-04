@@ -1,16 +1,42 @@
-# React + Vite
+# Night Agent UI + API
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This UI controls the Night Agent multi-repo execution service.
 
-Currently, two official plugins are available:
+## What it provides
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Start/cancel multi-repo runs from the browser
+- Durable run state persisted under `.night-agent-state`
+- Per-repo lock protection (prevents overlapping runs on the same repo)
+- Recent run history API (`GET /api/runs`)
+- Schedule API for recurring "all-day" execution
+- Default repo targets come from `agent-config.json` entries where `runTests` is `true`
 
-## React Compiler
+## Run locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run start
+```
 
-## Expanding the ESLint configuration
+- UI: `http://localhost:5173`
+- API: `http://localhost:8787`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## API summary
+
+- `POST /api/runs` start a run
+- `GET /api/runs` list recent runs
+- `GET /api/runs/:id` get run detail + logs
+- `POST /api/runs/:id/cancel` cancel active run
+- `GET /api/config` load server-provided default repos/form values
+- `GET /api/schedules` list recurring schedules
+- `POST /api/schedules` create recurring schedule
+- `POST /api/schedules/:id/enabled` enable/disable schedule
+- `DELETE /api/schedules/:id` delete schedule
+
+## Environment variables
+
+- `NIGHT_AGENT_PORT` (default `8787`)
+- `NIGHT_AGENT_STATE_DIR` (default `.night-agent-state` from repo root)
+- `NIGHT_AGENT_COMMAND_TIMEOUT_MS` (default `1800000`)
+- `NIGHT_AGENT_MAX_LOGS_PER_RUN` (default `5000`)
+- `NIGHT_AGENT_DEFAULT_RUN_LIST_LIMIT` (default `40`)
